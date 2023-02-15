@@ -28,8 +28,8 @@ class ArticleDetailsView: UIView {
 
     let titleImage: UIImageView = {
         let view = UIImageView()
-        view.image = UIImage(systemName: "xmark.icloud")
-        view.backgroundColor = .lightGray
+//        view.image = UIImage(systemName: "xmark.icloud")
+//        view.backgroundColor = .lightGray
         return view
     }()
 

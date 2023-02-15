@@ -33,7 +33,7 @@ class CoreDataManager {
     }
     
     func saveData(title: String, abstract: String, publishedDate: String, byline: String, image: Data?) {
-        
+
         let entity = NSEntityDescription.entity(forEntityName: "FavoriteArticle", in: context)
         let favoriteArticle = FavoriteArticle(entity: entity!, insertInto: context)
         favoriteArticle.title = title
@@ -49,10 +49,14 @@ class CoreDataManager {
         }
     }
     
-    func deleteData(object: FavoriteArticle) {
+    func deleteData(objectName: String) {
+        
+        let fetchRequest: NSFetchRequest<FavoriteArticle> = FavoriteArticle.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "title = %@", objectName)
+        let request = NSBatchDeleteRequest(fetchRequest: fetchRequest as! NSFetchRequest<NSFetchRequestResult>)
 
         do {
-            context.delete(object)
+            try context.execute(request)
             try context.save()
         }
         catch let error as NSError {

@@ -10,7 +10,6 @@ import Foundation
 /// protocol for delegate(first func) and send data(second) from viewmodel to vc
 protocol ArticleListViewModelDelegate: AnyObject {
     func didLoadArticles()
-    func didSelectArticle(viewModel: ArticleTableViewCellViewModel)
 }
 
 

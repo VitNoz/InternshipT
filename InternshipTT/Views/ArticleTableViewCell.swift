@@ -7,15 +7,17 @@
 
 import UIKit
 import SnapKit
+import AlamofireImage
+import Alamofire
 
 class ArticleTableViewCell: UITableViewCell {
     
     static let cellId = "ArticleTableViewCell"
+    var cellViewModel: ArticleTableViewCellViewModel?
+    weak var delegate: FavoritesArticlesCellDelegate?
     
     let titleImage: UIImageView = {
         let view = UIImageView()
-        view.image = UIImage(systemName: "xmark.icloud")
-        view.backgroundColor = .lightGray
         return view
     }()
     
@@ -24,6 +26,14 @@ class ArticleTableViewCell: UITableViewCell {
         view.numberOfLines = 0
         view.font = .systemFont(ofSize: 17, weight: .semibold)
         view.adjustsFontSizeToFitWidth = true
+        return view
+    }()
+    
+    let favoriteButton: UIButton = {
+        let view = UIButton()
+        view.setImage(UIImage(systemName: "star"), for: .normal)
+        view.isSelected = false
+        view.addTarget(self, action: #selector(favoriteButtonTapped), for: .touchUpInside)
         return view
     }()
     
@@ -56,6 +66,7 @@ class ArticleTableViewCell: UITableViewCell {
         contentView.addSubview(titleLabel)
         contentView.addSubview(byLineLabel)
         contentView.addSubview(publishedDateLabel)
+        contentView.addSubview(favoriteButton)
         
         titleImage.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(2)
@@ -67,15 +78,21 @@ class ArticleTableViewCell: UITableViewCell {
         titleLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(10)
             make.leading.equalTo(titleImage.snp.trailing).offset(10)
+            make.trailing.equalTo(favoriteButton.snp.leading).offset(-5)
+        }
+
+        favoriteButton.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(10)
             make.trailing.equalToSuperview().offset(-10)
+            make.height.equalTo(publishedDateLabel.snp.height)
+            make.width.equalTo(favoriteButton.snp.height)
         }
         
         byLineLabel.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(5)
-            make.bottom.equalToSuperview().offset(-10)
             make.trailing.equalTo(titleLabel.snp.centerX).offset(30)
             make.leading.equalTo(titleImage.snp.trailing).offset(10)
-            
+            make.bottom.lessThanOrEqualToSuperview().offset(-10)
         }
         
         publishedDateLabel.snp.makeConstraints { make in
@@ -84,18 +101,26 @@ class ArticleTableViewCell: UITableViewCell {
         }
         
     }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        
+        titleImage.af_cancelImageRequest()
+        titleImage.image = nil
+    }
+    
         ///for configure articleListCell
     func configureCell(viewModel: ArticleTableViewCellViewModel) {
         
+        cellViewModel = viewModel
         titleLabel.text = viewModel.articleTitle
         byLineLabel.text = viewModel.articleByline
         publishedDateLabel.text = viewModel.articlePublishedDate
-        viewModel.getImage(completion: { data, _ in
-            DispatchQueue.main.async { [unowned self] in
-                self.titleImage.image = UIImage(data: data!)
-            }
-        })
+        if let url = URL(string: viewModel.articleImageUrl ?? "") {
+            titleImage.af_setImage(withURL: url, placeholderImage: UIImage(systemName: "star"))
+        }
     }
+    
     ///for configure FavouriteArticleListCell
     func configureCellFavorites(viewModel: ArticleTableViewCellViewModel) {
         
@@ -105,6 +130,20 @@ class ArticleTableViewCell: UITableViewCell {
         if let data = viewModel.articleImageData {
             titleImage.image = UIImage(data: data)
         }
+        favoriteButton.setImage(UIImage(systemName: "star.fill"), for: .normal) //
+    }
+    
+    @objc func favoriteButtonTapped() {
+        
+        if favoriteButton.imageView?.image != UIImage(systemName: "star.fill") {
+            favoriteButton.setImage(UIImage(systemName: "star.fill"), for: .normal)
+            CoreDataManager.shared.saveData(title: cellViewModel!.articleTitle, abstract: cellViewModel!.articleAbstract, publishedDate: cellViewModel!.articlePublishedDate, byline: cellViewModel!.articleByline, image: titleImage.image?.jpegData(compressionQuality: 1))
+            favoriteButton.isSelected = true
+        } else {
+            favoriteButton.isSelected = false
+            CoreDataManager.shared.deleteData(objectName: titleLabel.text!)
+            delegate?.didDeleteArticleFromFavorites()
+            favoriteButton.setImage(UIImage(systemName: "star"), for: .normal)
+        }
     }
 }
-

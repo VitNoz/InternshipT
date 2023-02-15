@@ -30,11 +30,17 @@ class ArticlesListViewController: UIViewController {
         viewModel.delegate = self
         viewModel.getArticles(articlesCategory: articlesCategory!)
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        if let row = mainView.arcticlesTableView.indexPathForSelectedRow {
+            mainView.arcticlesTableView.deselectRow(at: row, animated: true)
+        }
+    }
         
     private func setupView() {
         
-        mainView.arcticlesTableView.dataSource = viewModel
-        mainView.arcticlesTableView.delegate = viewModel
+        mainView.arcticlesTableView.dataSource = self
+        mainView.arcticlesTableView.delegate = self
         mainView.arcticlesTableView.register(ArticleTableViewCell.self, forCellReuseIdentifier: ArticleTableViewCell.cellId)
         
         mainView.arcticlesTableView.rowHeight = view.bounds.height / 7
@@ -49,6 +55,27 @@ class ArticlesListViewController: UIViewController {
     }
 }
 
+extension ArticlesListViewController: UITableViewDelegate, UITableViewDataSource {
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return viewModel.cellViewModels.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: ArticleTableViewCell.cellId,
+                                                            for: indexPath) as! ArticleTableViewCell
+        let viewModel = viewModel.cellViewModels[indexPath.row]
+        cell.configureCell(viewModel: viewModel)
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        let viewModel = viewModel.cellViewModels[indexPath.row]
+        navigationController?.pushViewController(ArticleDetailsViewController(viewModel: viewModel), animated: true)
+    }
+}
+
 /// confotm to created protocol and execute func called in viewmodel
 extension ArticlesListViewController: ArticleListViewModelDelegate {
     
@@ -57,9 +84,4 @@ extension ArticlesListViewController: ArticleListViewModelDelegate {
         mainView.arcticlesTableView.isHidden = false
         mainView.arcticlesTableView.reloadData()
     }
-    
-    func didSelectArticle(viewModel: ArticleTableViewCellViewModel) {
-        navigationController?.pushViewController(ArticleDetailsViewController(viewModel: viewModel), animated: true)
-    }
-    
 }
